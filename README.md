@@ -93,6 +93,7 @@ curl http://localhost:5000/
 | `BCRYPT_SALT_ROUNDS`       | Read into config but not wired up yet — password hashing currently uses a hardcoded value (see below) |
 | `BACKEND_URL`              | Read into config but not used anywhere yet                          |
 | `FRONTEND_URL`             | Added to the CORS allowlist                                        |
+| `GOOGLE_CLIENT_ID`         | OAuth 2.0 client ID used to verify Google ID tokens on `/api/v1/auth/google` |
 
 There's no validation on startup: if a variable is missing, `config` simply holds `undefined` for it, and the app boots anyway. The first sign of trouble is usually a runtime error the moment that value is actually used — for `JWT_ACCESS_SECRET`, that means the very first login or registration.
 
@@ -151,6 +152,7 @@ Base URL: `http://localhost:5000`
 | `POST` | `/api/v1/auth/login`           | –             | `email`, `password`           |
 | `GET`  | `/api/v1/auth/me`              | yes           | –                              |
 | `POST` | `/api/v1/auth/refresh-token`   | –             | reads the `refreshToken` cookie |
+| `POST` | `/api/v1/auth/google`          | –             | `idToken` (Google ID token)    |
 
 Every response from `sendResponse` (i.e. everything except the root route) has this shape:
 
