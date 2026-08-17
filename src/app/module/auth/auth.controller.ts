@@ -9,12 +9,9 @@ import { PatientRegistrationZodSchema } from "./auth.validation";
 
 
 const registerPatient = catchAsync(async (req: Request, res: Response) => {
-	const payload = PatientRegistrationZodSchema.safeParse(req.body)
+	const payload = req.body
 
-	if(!payload.success) {
-		throw new Error(payload.error.issues[0].message)
-	}
-	const result = await AuthService.registerPatient(payload.data);
+	const result = await AuthService.registerPatient(payload);
 
 	const { accessToken, refreshToken, user, patient } = result;
 
