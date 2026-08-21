@@ -8,6 +8,10 @@ import { transporter } from "./app/lib/nodemailer";
 
 const PORT = config.port;
 
+
+
+
+
 const main = async () => {
 	try {
 		await prisma.$connect();
@@ -18,7 +22,7 @@ const main = async () => {
 
 		await transporter.verify()
 		console.log("Node mailer working")
-		
+
 		await seedSuperAdmin()
 		console.log("Connected to the database successfully.");
 
