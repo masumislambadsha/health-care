@@ -1,5 +1,6 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import { randomInt } from "crypto";
 import express, {
 	type Application,
 	type Request,
@@ -10,7 +11,6 @@ import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
-import { success } from "zod";
 import { redisClient } from "./app/lib/redis";
 
 const app: Application = express();
@@ -35,7 +35,9 @@ app.get("/test", async (req: Request, res: Response) => {
 
 	try {
 
-		await redisClient.set("forget-password:user@healthcare.com", "598541", {
+		const otp = randomInt(100000, 999999).toString().padStart(6, "0");
+
+		await redisClient.set("forget-password:user@healthcare.com", otp, {
 			expiration:
 			{
 				type:"EX",
@@ -46,6 +48,7 @@ app.get("/test", async (req: Request, res: Response) => {
 		res.status(httpStatus.OK).json({
 			success: true,
 			message: "Test route is working",
+			data: otp
 		})
 	} catch (error) {
 
