@@ -426,7 +426,7 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
 
   const hashedNewPassword = await bcrypt.hash(newPassword, 8);
 
-  const updatedUser = await prisma.user.update({
+  await prisma.user.update({
     where: {
       email: isUserExists.email,
     },
@@ -436,6 +436,8 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   });
 
   // return updatedUser;
+
+	await redisClient.del([key])
 };
 
 export const AuthService = {
