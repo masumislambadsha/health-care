@@ -12,7 +12,8 @@ export const seedSuperAdmin = async () => {
     });
 
     if (seedSuperAdmin) {
-      console.log(`Super admin exitsts`);
+      console.log(`Super admin exists`);
+      return;
     }
     const name = config.super_admin_name;
     const email = config.super_admin_email;
@@ -41,11 +42,5 @@ export const seedSuperAdmin = async () => {
     console.log("Super admin created", superAdmin);
   } catch (error) {
     console.log("Error seeding super admin", error);
-
-    await prisma.user.delete({
-      where:{
-        email: config.super_admin_email
-      }
-    })
   }
 };
