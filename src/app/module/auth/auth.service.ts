@@ -18,16 +18,13 @@ import type {
   IRegisterPatientPayload,
   IRequestUser,
   IResetPasswordPayload,
+  IVefifyEmailPayload,
 } from "./auth.interface";
-import { catchAsync } from "../../utils/catchAsync";
-import { Request } from "express";
-import { is } from "zod/locales";
 import { randomInt } from "node:crypto";
 import { redisClient } from "../../lib/redis";
 import { transporter } from "../../lib/nodemailer";
-import ejs from "ejs"
+import ejs from "ejs";
 import path from "path";
-
 
 const registerPatient = async (payload: IRegisterPatientPayload) => {
   const { name, password, patient: patientData } = payload;
@@ -44,25 +41,106 @@ const registerPatient = async (payload: IRegisterPatientPayload) => {
 
   const hashedPassword = await bcrypt.hash(password, 8);
 
+  const otp = randomInt(100000, 999999);
+  const otpKey = `patient-registration-otp-${email}`;
+
+  await redisClient.set(otpKey, otp.toString(), {
+    expiration: {
+      type: "EX",
+      value: 5 * 60,
+    },
+  });
+
+  const redisUserDataPayload = {
+    name,
+    email,
+    password: hashedPassword,
+    patient: patientData,
+  };
+  const patientRegistrationKey = `patient-registration-data-${email}`;
+
+  await redisClient.set(
+    patientRegistrationKey,
+    JSON.stringify(redisUserDataPayload),
+    {
+      expiration: {
+        type: "EX",
+        value: 5 * 60,
+      },
+    },
+  );
+
+  const templatePath = path.join(
+    process.cwd(),
+    "src/app/templates/registration.user.ejs",
+  );
+  const html = await ejs.renderFile(templatePath, { otp });
+
+  await transporter.sendMail({
+    from: config.email_sender,
+    to: email,
+    subject: "Email Verification",
+    html,
+  });
+};
+
+const verifyPatient = async (payload: IVefifyEmailPayload) => {
+  const otp = payload.otp;
+
+  const email = payload.email.trim().toLowerCase();
+
+  const patientVerificationKey = `patient-registration-otp-${email}`;
+  const redisOTP = await redisClient.get(patientVerificationKey);
+
+  if (!redisOTP) {
+    throw new Error("OTP expired or not requested. Please register again.");
+  }
+
+  if (redisOTP !== otp) {
+    throw new Error("Invalid OTP");
+  }
+
+  await redisClient.del(patientVerificationKey);
+
+  const patientRegistrationKey = `patient-registration-data-${email}`;
+  const redisPatientData = await redisClient.get(patientRegistrationKey);
+
+  if (!redisPatientData) throw new Error("Registration data expired. Please register again.");
+
+  const isUserExists = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (isUserExists?.emailVerified) {
+    throw new Error("User is already Verified");
+  }
+  if (isUserExists) {
+    throw new Error("User with this email already exists");
+  }
+
+  const patientPayload: IRegisterPatientPayload = JSON.parse(redisPatientData);
+
   const createdUser = await prisma.user.create({
     data: {
-      name,
-      email,
-      password: hashedPassword,
+      name: patientPayload.name,
+      email: patientPayload.email,
+      password: patientPayload.password,
       role: Role.PATIENT,
       status: UserStatus.ACTIVE,
-      emailVerified: false,
+      emailVerified: true,
       patient: {
         create: {
-          name,
-          email,
-          contactNumber: patientData?.contactNumber || "",
+          name: patientPayload.name,
+          email: patientPayload.email,
+          contactNumber: patientPayload.patient?.contactNumber || "",
         },
       },
     },
     omit: { password: true },
     include: { patient: true },
   });
+
+  await redisClient.del(patientRegistrationKey);
 
   const { patient, ...user } = createdUser;
   const jwtPayload = {
@@ -388,17 +466,19 @@ const forgotPassword = async (payload: IForgotPasswordPayload) => {
     },
   });
 
-
-  const templatePath = path.join(process.cwd(), "src/app/templates/forgot-password.ejs")
-  const html = await ejs.renderFile(templatePath, {OTP : otp},)
+  const templatePath = path.join(
+    process.cwd(),
+    "src/app/templates/forgot-password.ejs",
+  );
+  const html = await ejs.renderFile(templatePath, { otp });
 
   await transporter.sendMail({
     from: config.email_sender,
     to: email,
     subject: "Forgot Password Request",
     // html: `Your OTP is ${otp}`,
-    html
-  })
+    html,
+  });
 };
 const resetPassword = async (payload: IResetPasswordPayload) => {
   const { email, otp, newPassword } = payload;
@@ -437,8 +517,8 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
   }
 
   if (redisOTP !== otp) {
-		throw new Error("Invalid OTP")
-	}
+    throw new Error("Invalid OTP");
+  }
 
   const hashedNewPassword = await bcrypt.hash(newPassword, 8);
 
@@ -453,11 +533,12 @@ const resetPassword = async (payload: IResetPasswordPayload) => {
 
   // return updatedUser;
 
-	await redisClient.del([key])
+  await redisClient.del([key]);
 };
 
 export const AuthService = {
   registerPatient,
+  verifyPatient,
   loginUser,
   getMe,
   refreshToken,

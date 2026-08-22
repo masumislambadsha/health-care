@@ -14,6 +14,13 @@ export interface IRegisterPatientPayload {
 	};
 }
 
+export interface IVefifyEmailPayload {
+	email: string;
+	otp: string;
+}
+
+
+
 export interface IRequestUser {
 	userId: string;
 	email: string;

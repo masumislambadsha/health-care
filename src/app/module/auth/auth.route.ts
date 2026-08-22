@@ -2,12 +2,13 @@ import { NextFunction, Request, Response, Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
 import { AuthController } from "./auth.controller";
-import { LoginZodSchema, PatientRegistrationZodSchema } from "./auth.validation";
+import { LoginZodSchema, PatientRegistrationZodSchema, VerifyEmailSchema } from "./auth.validation";
 import { validateRequest } from "../../middleware/validateRequest";
 
 const router = Router();
 
 router.post("/register", validateRequest(PatientRegistrationZodSchema), AuthController.registerPatient);
+router.post("/verify-email", validateRequest(VerifyEmailSchema), AuthController.verifyEmail);
 router.post("/login", validateRequest(LoginZodSchema) , AuthController.loginUser);
 router.get(
   "/me",

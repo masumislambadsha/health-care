@@ -8,8 +8,20 @@ import { AuthService } from "./auth.service";
 const registerPatient = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
 
-  const result = await AuthService.registerPatient(payload);
+  await AuthService.registerPatient(payload);
 
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Verification OTP Sent",
+    data: {},
+  });
+});
+
+const verifyEmail = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+
+  const result = await AuthService.verifyPatient(payload)
   const { accessToken, refreshToken, user, patient } = result;
 
   res.cookie("accessToken", accessToken, {
@@ -25,17 +37,17 @@ const registerPatient = catchAsync(async (req: Request, res: Response) => {
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   });
 
-  sendResponse(res, {
-    statusCode: httpStatus.CREATED,
-    success: true,
-    message: "Patient registered successfully",
-    data: {
-      accessToken,
-      refreshToken,
-      user,
-      patient,
-    },
-  });
+    sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: "User Created Successfully",
+      data: {
+        accessToken,
+        refreshToken,
+        user,
+        patient
+      }
+    })
 });
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
@@ -159,7 +171,7 @@ const forgetPassword = catchAsync(async (req: Request, res: Response) => {
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
 
- await AuthService.resetPassword(payload);
+  await AuthService.resetPassword(payload);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -170,6 +182,7 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 });
 export const AuthController = {
   registerPatient,
+  verifyEmail,
   loginUser,
   getMe,
   refreshToken,
