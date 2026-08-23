@@ -26,6 +26,21 @@ import { transporter } from "../../lib/nodemailer";
 import ejs from "ejs";
 import path from "path";
 
+const sendWelcomeEmail = async (name: string, email: string) => {
+  const templatePath = path.join(
+    process.cwd(),
+    "src/app/templates/welcome.ejs",
+  );
+  const html = await ejs.renderFile(templatePath, { name });
+
+  await transporter.sendMail({
+    from: config.email_sender,
+    to: email,
+    subject: "Welcome to Health Care",
+    html,
+  });
+};
+
 const registerPatient = async (payload: IRegisterPatientPayload) => {
   const { name, password, patient: patientData } = payload;
 
@@ -142,20 +157,7 @@ const verifyPatient = async (payload: IVefifyEmailPayload) => {
 
   await redisClient.del(patientRegistrationKey);
 
-  const welcomeTemplatePath = path.join(
-    process.cwd(),
-    "src/app/templates/welcome.ejs",
-  );
-  const welcomeHtml = await ejs.renderFile(welcomeTemplatePath, {
-    name: createdUser.name,
-  });
-
-  await transporter.sendMail({
-    from: config.email_sender,
-    to: createdUser.email,
-    subject: "Welcome to Health Care",
-    html: welcomeHtml,
-  });
+  await sendWelcomeEmail(createdUser.name, createdUser.email);
 
   const { patient, ...user } = createdUser;
   const jwtPayload = {
@@ -401,6 +403,10 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
           },
         },
       });
+
+      if (user) {
+        await sendWelcomeEmail(user.name, user.email);
+      }
     }
   }
 
