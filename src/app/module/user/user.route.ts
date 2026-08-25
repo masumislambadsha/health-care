@@ -7,6 +7,6 @@ import { upload } from "../../lib/multer";
 
 const router = Router();
 
-router.patch("/profile-image", upload.single("profileImage") ,UserController.uploadProfileImage)
+router.patch("/profile-image", auth(Role.ADMIN, Role.SUPER_ADMIN, Role.DOCTOR, Role.PATIENT), upload.single("profileImage") ,UserController.uploadProfileImage)
 
-export const UserRoutes = router
+export const  UserRoutes = router
