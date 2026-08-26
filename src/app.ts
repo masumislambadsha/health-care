@@ -13,6 +13,7 @@ import { notFound } from "./app/middleware/notFound";
 import { AuthRoutes } from "./app/module/auth/auth.route";
 import { redisClient } from "./app/lib/redis";
 import { UserRoutes } from "./app/module/user/user.route";
+import { getBkashIdToken } from "./app/lib/bkash";
 
 const app: Application = express();
 
@@ -36,21 +37,12 @@ app.use("/api/v1/user", UserRoutes);
 app.get("/test", async (req: Request, res: Response) => {
 
 	try {
-
-		const otp = randomInt(100000, 999999).toString().padStart(6, "0");
-
-		await redisClient.set("forget-password:user@healthcare.com", otp, {
-			expiration:
-			{
-				type:"EX",
-				value: 60 * 5
-			}
-		})
+		const grantIdToken = await getBkashIdToken()
 
 		res.status(httpStatus.OK).json({
 			success: true,
 			message: "Test route is working",
-			data: otp
+			data: null,
 		})
 	} catch (error) {
 
