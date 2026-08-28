@@ -7,13 +7,17 @@ import { AppointmentService } from "./appointment.service";
 const bookAppointement = catchAsync(async(req: Request, res: Response) =>{
 
 
-  const result = await AppointmentService.bookAppointment;
+  const result = await AppointmentService.bookAppointment();
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Booking Sucessfull",
-    data: {}
+    data: result
   })
 
 })
+
+export const AppointmentController = {
+  bookAppointement
+}

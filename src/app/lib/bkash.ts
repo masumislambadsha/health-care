@@ -22,7 +22,7 @@ export const getBkashIdToken = async () => {
             Accept: "application/json",
             username: config.bkash_username,
             password: config.bkash_password,
-          },
+          } as HeadersInit,
           body: JSON.stringify({
             app_key: config.bkash_app_key,
             app_secret: config.bkash_app_secret,
@@ -56,7 +56,7 @@ export const getBkashIdToken = async () => {
           Accept: "application/json",
           username: config.bkash_username,
           password: config.bkash_password,
-        },
+        } as HeadersInit,
         body: JSON.stringify({
           app_key: config.bkash_app_key,
           app_secret: config.bkash_app_secret,
