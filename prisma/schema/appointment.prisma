@@ -1,0 +1,10 @@
+model Appointment {
+  id String @id @default(uuid())
+  status AppointmentStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  payment Payment?
+
+  @@map("appointment")
+}
