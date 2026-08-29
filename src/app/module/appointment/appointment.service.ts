@@ -28,7 +28,7 @@ const bookAppointment = async () => {
         amount: "1200",
         currency: "BDT",
         intent: "sale",
-        merchantInvoiceNumber: "Inv0124",
+        merchantInvoiceNumber: "Invsdjfakh0124",
       }),
     },
   );
@@ -38,8 +38,7 @@ const bookAppointment = async () => {
   return bkashCreatePaymentResult;
 };
 
-import type { ParsedQs } from "qs";
-const bookAppointmentCallback = async (query: ParsedQs) => {
+const bookAppointmentCallback = async (query: Record<string, any>) => {
   const bkashIdToken = await getBkashIdToken();
 
   if (!bkashIdToken) {
@@ -65,17 +64,39 @@ const bookAppointmentCallback = async (query: ParsedQs) => {
         Authorization: bkashIdToken,
         "X-App-Key": config.bkash_app_key,
       } as HeadersInit,
-      body : JSON.stringify({
-        paymentID: paymentId
-      })
+      body: JSON.stringify({
+        paymentID: paymentId,
+      }),
     },
   );
 
-  const executedPaymentResult = await exectuedPaymentResponse.json()
-  return executedPaymentResult;
+  const executedPaymentResult = await exectuedPaymentResponse.json();
+
+  if (status === "success") {
+    return {
+      executedPaymentResult,
+      redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=success`,
+    };
+  }
+  if (status === "failuer") {
+    return {
+      executedPaymentResult,
+      redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=failuer`,
+    };
+  }
+  if (status === "cancel") {
+    return {
+      executedPaymentResult,
+      redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=cancel`,
+    };
+  }
+  return {
+    executedPaymentResult,
+    redirectUrl: `${config.frontend_url}/dashboard/my-appointments?status=cancel`,
+  };
 };
 
 export const AppointmentService = {
   bookAppointment,
-  bookAppointmentCallback
+  bookAppointmentCallback,
 };
